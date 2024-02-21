@@ -1,23 +1,49 @@
-# Import the OpenAI library for API access and the requests library for making HTTP requests
-import openai
-import requests
+import argparse
+import os
+import assemblyai as aai
+from dotenv import load_dotenv
 
-# Set your OpenAI API key
-openai.api_key = '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'
+# Load .env file and get the API key
+load_dotenv()
+aai.settings.api_key = os.getenv('ASSEMBLYAI_KEY')
 
-# Open the output.mp3 file in read-binary mode
-with open('output.mp3', 'rb') as audio_file:
-    # Call the OpenAI API's Audio.transcribe method to transcribe the audio file
-    # The 'file' parameter is the audio file
-    # The 'model' parameter specifies the model to use for transcription (in this case, 'whisper-1')
-    # The 'response_format' parameter specifies the format of the response (in this case, 'text')
-    # The 'language' parameter specifies the language of the audio (in this case, 'en' for English)
-    response = openai.Audio.transcribe(
-        file=audio_file,
-        model='whisper-1',
-        response_format='text',
-        language='en'
-    )
+def transcribe(file_path, speaker_labels=True):
+    # Configuration for transcription with diarization
+    config = aai.TranscriptionConfig(speaker_labels=speaker_labels)
 
-# Print the response from the API
-print(response)
+    # Create a transcriber object
+    transcriber = aai.Transcriber()
+
+    # Transcribe the audio file
+    transcript = transcriber.transcribe(file_path, config=config)
+
+    # Wait for the transcription to complete
+    while transcript.status != 'completed':
+        # Implement a suitable wait mechanism, e.g., sleep
+        pass
+
+    return transcript
+
+def main():
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description="Transcribe audio files using AssemblyAI.")
+    parser.add_argument('file_path', help="Path to the audio file for transcription")
+    parser.add_argument('--output', choices=['console', 'file', 'both'], default='console', 
+                        help="Output transcription to console, file, or both")
+    args = parser.parse_args()
+
+    # Transcribe the audio file
+    transcript = transcribe(args.file_path)
+
+    # Output handling
+    if args.output in ['console', 'both']:
+        for utterance in transcript.utterances:
+            print(f"Speaker {utterance.speaker}: {utterance.text}")
+
+    if args.output in ['file', 'both']:
+        with open('transcription.txt', 'w') as file:
+            for utterance in transcript.utterances:
+                file.write(f"Speaker {utterance.speaker}: {utterance.text}\n")
+
+if __name__ == '__main__':
+    main()

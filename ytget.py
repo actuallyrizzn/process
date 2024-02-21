@@ -1,46 +1,42 @@
-# Import necessary libraries
+#!/usr/bin/python3
+import argparse
 from pytube import YouTube
-import os
-import re
-import sys
 
-# Function to display download progress
 def progress_function(stream, chunk, bytes_remaining):
     total_size = stream.filesize
     bytes_downloaded = total_size - bytes_remaining
-    liveprogress = (bytes_downloaded / total_size) * 100
-    print("Downloading... {:.2f}%".format(liveprogress), end="\r")
 
-# Function to download a YouTube video
-def download_video(url: str, destination_dir: str = None) -> list[str]:
-    if destination_dir is None:
-        destination_dir = os.getcwd()
-    suggestions = []
-    if not re.match(r'^https?://(?:www\.)?youtube\.com/(?:watch\?v=|live/)([\w-]+)$', url):
-        suggestions.append('Invalid URL format')
-        return suggestions
-    if 'youtu.be' in url:
-        video_id = url.split('/')[-1]
-        url = f'https://www.youtube.com/watch?v={video_id}'
-    if not os.path.isdir(os.path.abspath(destination_dir)):
-        suggestions.append('Invalid destination directory')
-        return suggestions
-    try:
-        youtube = YouTube(url, on_progress_callback=progress_function)
-        video = youtube.streams.get_highest_resolution()
-        if video is None:
-            suggestions.append('No suitable stream found')
-        else:
-            video.download(output_path=destination_dir, filename='video.mp4')
-            suggestions.append(f'Video saved to {os.path.join(destination_dir, "video.mp4")}')
-    except Exception as e:
-        suggestions.append(f'Error: {e}')
-    return suggestions
+    percentage_of_completion = bytes_downloaded / total_size * 100
+    print(f"\r{percentage_of_completion:.2f}% downloaded", end="")
 
-if len(sys.argv) > 1:
-    url = sys.argv[1]
-    suggestions = download_video(url)
-    for suggestion in suggestions:
-        print(suggestion)
-else:
-    print('Please provide a YouTube video URL as a command line argument.')
+def complete_function(stream, file_path):
+    print("\nDownload completed and saved to:", file_path)
+
+def download_video(url, output_filename=None, output_path='.'):
+    yt = YouTube(url)
+    yt.register_on_progress_callback(progress_function)
+    yt.register_on_complete_callback(complete_function)
+
+    # If no output filename is given, use the video's title and add .mp4 extension
+    if not output_filename:
+        output_filename = yt.title + ".mp4"
+
+    # Select the lowest resolution MP4 stream
+    video = sorted(
+        [stream for stream in yt.streams.filter(file_extension='mp4', progressive=True)],
+        key=lambda x: x.resolution if x.resolution else "9999"
+    )[0]
+
+    video.download(output_path, filename=output_filename)
+
+def main():
+    parser = argparse.ArgumentParser(description='Download YouTube video with specified output name.')
+    parser.add_argument('url', help='The URL of the YouTube video.')
+    parser.add_argument('-f', '--file', dest='output_filename', default=None, help='The desired output filename without extension. Defaults to the YouTube video title if not specified.')
+    parser.add_argument('--output_path', default='.', help='The output path for the downloaded video.')
+    args = parser.parse_args()
+
+    download_video(args.url, args.output_filename, args.output_path)
+
+if __name__ == '__main__':
+    main()
