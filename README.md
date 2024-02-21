@@ -9,24 +9,10 @@ Repo URL: [http://github.com/actuallyrizzn/process](http://github.com/actuallyri
 
 The main workflow is controlled by a bash script `process.sh`, which in turn calls several Python scripts and a bash script to complete specific tasks:
 
-### 1. `process`
-This is the master script that coordinates the entire process. It takes a YouTube video URL as input and outputs a summarized text of the video content.
+### 1. `transcribe.py`
+This Python script uses the OpenAI API's Audio.transcribe or optionally AssemblyAI's method to transcribe the audio file. It assumes that you have an OpenAI API key stored in a file named `openai.api`.
 
-Usage: ./process <youtube url>
-
-### 2. `ytget.py`
-This Python script downloads a YouTube video. It uses the `pytube` library to do this.
-
-### 3. `v2a.sh`
-This bash script uses `ffmpeg` to convert the downloaded video file to an audio file. If the audio file is larger than 25MB, it is split into smaller chunks using `ffmpeg`.
-
-### 4. `transcribe.py`
-This Python script uses the OpenAI API's Audio.transcribe method to transcribe the audio file. It assumes that you have an OpenAI API key stored in a file named `openai.api`.
-
-### 5. `chnk.py`
-This Python script chunks large text files into smaller pieces. This is useful when the transcribed text is too large to be sent to an API in one go.
-
-### 6. `summarize.py`
+### 2. `summarize.py`
 This Python script uses the OpenAI API's Completion.create method to generate a summary of the transcribed text. It assumes that you have an OpenAI API key stored in a file named `openai.api`.
 
 ## Installation
