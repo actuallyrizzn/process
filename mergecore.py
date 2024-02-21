@@ -12,32 +12,44 @@ from tokencount import calculate_tokens
 # Load .env file if it exists
 load_dotenv()
 
-def spinner():
-    while not stop_spinner:
-        for cursor in '|/-\\':
-            sys.stdout.write(cursor)
-            sys.stdout.flush()
-            time.sleep(0.1)
-            sys.stdout.write('\b')
+# Constants
+MAX_RETRIES = 15
+BASE_WAIT_TIME = 2
+TOKEN_LIMITS = {
+    'gpt-3.5-turbo-16k': 16000,
+    'gpt-4': 8000
+}
 
-def spin_cursor():
-    global stop_spinner
-    stop_spinner = False
-    spinner_thread = threading.Thread(target=spinner)
-    spinner_thread.start()
+class Spinner:
+    """A class to manage a spinning cursor in the terminal."""
+    def __init__(self):
+        self.stop_spinner = False
+        self.spinner_thread = threading.Thread(target=self.spinner)
 
-def stop_cursor():
-    global stop_spinner
-    stop_spinner = True
+    def spinner(self):
+        """Display a spinning cursor."""
+        while not self.stop_spinner:
+            for cursor in '|/-\\':
+                sys.stdout.write(cursor)
+                sys.stdout.flush()
+                time.sleep(0.1)
+                sys.stdout.write('\b')
+
+    def start(self):
+        """Start the spinning cursor."""
+        self.stop_spinner = False
+        self.spinner_thread.start()
+
+    def stop(self):
+        """Stop the spinning cursor."""
+        self.stop_spinner = True
 
 def log(message):
-    """Log a message to stdout or a file, if specified."""
+    """Log a message to stdout."""
     print(message)
-    #if args.log_file is not None:
-    #    with open(args.log_file, 'a') as f:
-    #        f.write(message + '\n')
 
-def backoff_and_retry(api_call, max_retries=15):
+def backoff_and_retry(api_call, max_retries=MAX_RETRIES):
+    """Retry an API call with exponential backoff in case of rate limit errors."""
     last_exception = None
     for i in range(max_retries):
         try:
@@ -46,7 +58,7 @@ def backoff_and_retry(api_call, max_retries=15):
         except openai.error.RateLimitError as e:
             # If a rate limit error is encountered, wait and then retry
             last_exception = e
-            wait_time = (2 ** i) + random.random()
+            wait_time = (BASE_WAIT_TIME ** i) + random.random()
             log(f"Rate limit reached. Waiting for {wait_time} seconds...")
             time.sleep(wait_time)
     # If we've retried the maximum number of times, re-raise the last error
@@ -69,10 +81,10 @@ def research(file_name):
     # Decision-making based on token count
     if token_count > 7000:
         model = 'gpt-3.5-turbo-16k'
-        max_token_limit = 16000
+        max_token_limit = TOKEN_LIMITS[model]
     else:
         model = 'gpt-4'
-        max_token_limit = 8000
+        max_token_limit = TOKEN_LIMITS[model]
 
     # Calculate max_token and prompt_token
     max_token = int(0.95 * max_token_limit)
