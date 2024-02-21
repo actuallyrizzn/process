@@ -10,7 +10,7 @@ Repo URL: [http://github.com/actuallyrizzn/process](http://github.com/actuallyri
 The main workflow is controlled by a bash script `process.sh`, which in turn calls several Python scripts and a bash script to complete specific tasks:
 
 ### 1. `transcribe.py`
-This Python script uses the OpenAI API's Audio.transcribe method to transcribe the audio file. It assumes that you have an OpenAI API key stored in a file named `openai.api`.
+This Python script uses the OpenAI API's Audio.transcribe or optionally AssemblyAI's method to transcribe the audio file. It assumes that you have an OpenAI API key stored in a file named `openai.api`.
 
 ### 2. `summarize.py`
 This Python script uses the OpenAI API's Completion.create method to generate a summary of the transcribed text. It assumes that you have an OpenAI API key stored in a file named `openai.api`.
