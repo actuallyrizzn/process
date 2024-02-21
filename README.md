@@ -27,31 +27,14 @@ cd process
 ```
 3. Make sure you have the necessary dependencies installed. You can install the Python dependencies using pip:
 ```
-pip install pytube openai
-```
-4. Install `ffmpeg` on your system. The installation process varies depending on your operating system.
-
-## Usage
-
-Run the `process.sh` script with a YouTube video URL:
-
-```
-./process.sh -u <YouTube Video URL>
-```
-
-You can also specify a destination directory for the downloaded video:
-
-```
-./process.sh -u <YouTube Video URL> -d <Destination Directory>
+pip install openai
 ```
 
 ## Dependencies
 
 - bash
 - Python 3
-- pytube
 - openai
-- ffmpeg
 
 ---
 
