@@ -1,7 +1,7 @@
 
 # Process
 
-This repository hosts a set of scripts designed to automate the process of downloading a YouTube video, extracting its audio, transcribing the audio, and summarizing the transcribed text. It's perfect for quickly generating summaries of long video content.
+This repos a set of libraries and command line utilities for quickly interfacing with various LLMs
 
 Repo URL: [http://github.com/actuallyrizzn/process](http://github.com/actuallyrizzn/process)
 
