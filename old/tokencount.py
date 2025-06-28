@@ -1,6 +1,7 @@
 import argparse
 import json
 import tiktoken
+import sys
 
 # Dictionary mapping model names to their behaviors
 model_behavior = {'gpt-3.5-turbo-0613': {'tokens_per_message': 3, 'tokens_per_name': 1}, 'gpt-3.5-turbo-16k-0613': {'tokens_per_message': 3, 'tokens_per_name': 1}, 'gpt-4-0314': {'tokens_per_message': 3, 'tokens_per_name': 1}, 'gpt-4-32k-0314': {'tokens_per_message': 3, 'tokens_per_name': 1}, 'gpt-4-0613': {'tokens_per_message': 3, 'tokens_per_name': 1}, 'gpt-4-32k-0613': {'tokens_per_message': 3, 'tokens_per_name': 1}, 'gpt-3.5-turbo-0301': {'tokens_per_message': 4, 'tokens_per_name': -1}}
@@ -68,27 +69,23 @@ def enhanced_argparse_setup():
     """Setup argparse for enhanced token calculation."""
     parser = argparse.ArgumentParser(description='Calculate the number of tokens in a given text file for a specific model.')
     parser.add_argument('filepath', type=str, help='Path to the text file.')
-    parser.add_argument('--model', type=str, default="gpt-3.5-turbo-0613",
-                        help='The model to calculate tokens for. Supported models are: ' + ', '.join(model_behavior.keys()) + '. Default is gpt-3.5-turbo-0613.')
+    parser.add_argument('--model', type=str, default=None,
+                        help='The model to calculate tokens for. If not specified, the most cost-efficient available model will be used.')
     parser.add_argument('--json-output', action='store_true', help='Output the token count in JSON format.')
     return parser
 
-def calculate_tokens(data, model="gpt-3.5-turbo-0613", json_output=False):
+def calculate_tokens(data, model=None, json_output=False):
     """
     Calculate the number of tokens for given data and model.
-
-    Parameters:
-    - data (list or str): List of messages or plain text. Each message is a dictionary with "role" and "content" keys.
-    - model (str): Model name to calculate tokens for.
-    - json_output (bool): Whether to return the result in JSON format.
-
-    Returns:
-    - int or str: Token count (as integer) or JSON formatted string based on json_output flag.
+    If model is None, use the most cost-efficient available.
     """
     # Handle plain text input
     if isinstance(data, str):
         data = [{"role": "system", "content": data}]
-
+    if not model:
+        from process.core import select_model_for_content
+        content = '\n'.join([m.get('content', '') for m in data])
+        model = select_model_for_content(content).model
     tokens = enhanced_num_tokens_from_messages(data, model, json_output)
     if json_output:
         return json.dumps({"tokens": tokens})
@@ -110,7 +107,7 @@ def main():
         # If parsing as JSON fails, treat content as a single message
         messages = [{"role": "system", "content": content}]
 
-    tokens = enhanced_num_tokens_from_messages(messages, args.model, args.json_output)
+    tokens = calculate_tokens(messages, args.model, args.json_output)
     print_output(tokens, args.filepath, args.model, args.json_output)
 
 if __name__ == "__main__":
